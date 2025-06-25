@@ -27,6 +27,7 @@ class Model:
         def Hk(kx, ky): 
             """Evaluate the Hamiltonian at given kx, ky."""
             hk = np.empty_like(H, dtype=complex)
+            #hk = np.empty_like(H, dtype=float)
             eps = 1e-15
             for index in np.ndindex(H.shape): hk[index] = H[index](kx, ky)
             hk[np.abs(hk) < eps] = 0
