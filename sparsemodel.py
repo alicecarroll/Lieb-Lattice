@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.sparse as sp
+import random
 
 class SparseModel:
     def __init__(self, **kwargs):
@@ -10,8 +11,10 @@ class SparseModel:
         self.nx = kwargs.get('nx', 10) # system size in x-direction
         self.ny = kwargs.get('ny', 10) # system size in y-direction
 
-        self.bcx = kwargs.get('bcx', False)
-        self.bcy = kwargs.get('bcy', False)
+        self.bcx = kwargs.get('bcx', False) # boundary conditions x-axis
+        self.bcy = kwargs.get('bcy', False) # boundary conditions y-axis
+
+        self.AD = kwargs.get('AD', 0.0) # introducing Anderson Disorder
 
         # Internal variables are named with _ for convention
         self._sublattice_dim = 3 # Number of sublattices
@@ -25,10 +28,14 @@ class SparseModel:
         # Create a sparse matrix representation of the Hamiltonian
         
         dim = self.nx * self.ny * self._sublattice_dim # Dimension of the Hamiltonian matrix
+
         sH = sp.csr_matrix((dim, dim))
+        if self.AD != 0.0:
+            sH+= sp.diags((np.random.random(dim)-0.5)*2*self.AD*self.t,  0, shape=sH.shape, format='csr')
         sH += sp.diags([-self.mu], 0, shape=sH.shape, format='csr')
 
-        sH_lil = sH.tolil()        
+        sH_lil = sH.tolil()    
+            
          
         for idxFrom, siteFrom in enumerate(self._siteList):
             m1, m2, s = siteFrom  # Unpack site coordinates and sublattice index
@@ -42,7 +49,7 @@ class SparseModel:
                         elif siteTo[0] >= self.nx:
                             siteTo = ((m1+1)%self.nx , m2,1)
                         idxTo = self._indexList[siteTo]
-                        sH_lil[idxFrom, idxTo] += -self.t        
+                        sH_lil[idxFrom, idxTo] += -self.t       
                 case 1: #B-site
                     siteToList = [(m1,m2,0), (m1,m2,2), (m1-1,m2,0), (m1,m2-1,2)]
                     for siteTo in siteToList:
