@@ -1,6 +1,5 @@
 import numpy as np
 import scipy.sparse as sp
-import random
 
 class SparseModel:
     def __init__(self, **kwargs):
