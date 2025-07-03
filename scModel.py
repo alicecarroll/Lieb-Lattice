@@ -15,9 +15,13 @@ class Model:
         """Construct the real space sparse Hamiltonian function."""
         # Create a sparse matrix representation of the Hamiltonian
         H = np.zeros((12, 12), dtype=object)  # Placeholder for Hamiltonian matrix
-        
+        #H = self.mu*H
         for index, _ in np.ndenumerate(H): H[index] = lambda kx, ky, delta: 0
 
+        #diagonals
+        for i in range(6): H[i,i] = lambda kx, ky, delta: self.mu
+        for i in range(6,12): H[i, i] = lambda kx, ky, delta: - self.mu
+        #H[np.array]
         #h
         H[np.array([0, 1, 3, 4]), np.array([1, 0, 4, 3])] = lambda kx, ky, delta: -2*self.t * np.cos(kx/2) # Some function of kx, ky
         H[np.array([1, 2, 4, 5]), np.array([2, 1, 5, 4])] = lambda kx, ky, delta: -2*self.t * np.cos(ky/2) 
@@ -54,7 +58,7 @@ class Model:
     
         for i in range(n):
             e = np.linalg.eigvalsh(self.Hk(kx[i], ky[i])) #np.linalg.eig(self.Hk(kx[i], ky[i]))[0]
-            #e[np.abs(e)<eps]=0
+            e[np.abs(e)<eps]=0
             eig[i]=np.sort(e)
             
         return eig.T
@@ -62,11 +66,12 @@ class Model:
     def Es(self, k):
         #E=np.array([[],[],[]])
         l = np.shape(k)[0]
+        a1 = np.ones(l)
         E=np.empty((12, l))
         eps = 1e-15
 
         for i in k:
-            Erow = self.solvHam(i*np.ones(l), k)
+            Erow = self.solvHam(i*a1, k)
             E = np.concatenate((E, Erow), axis=1)
             E[np.abs(E)<eps]=0
         return E
