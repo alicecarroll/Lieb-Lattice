@@ -9,10 +9,10 @@ class Model:
 
         # Internal variables are named with _ for convention
         self.Del0 = kwargs.get('Del0', 0.0)
-        self.DelA = kwargs.get('DelA', 0.0)
-        self.DelB = kwargs.get('DelB', 0.0)
+        self.DelD = kwargs.get('Deld', 0.0)
+        self.DelS = kwargs.get('Dels', 1.0)
 
-        self.dwave = kwargs.get('dwave', False)
+        #self.dwave = kwargs.get('dwave', False)
 
         self.Hk = self.HBdG()
 
@@ -22,6 +22,9 @@ class Model:
         H = np.zeros((12, 12), dtype=object)  # Placeholder for Hamiltonian matrix
         #H = self.mu*H
         for index, _ in np.ndenumerate(H): H[index] = lambda kx, ky: 0
+
+        DelA = self.DelS+self.DelD
+        DelB = self.DelS-self.DelD
 
         #diagonals
         for i in range(6): H[i,i] = lambda kx, ky: self.mu
@@ -39,16 +42,16 @@ class Model:
         H[np.array([0, 1, 2, 9, 10, 11]), np.array([9, 10, 11, 0, 1, 2])] = lambda kx, ky: self.Del0
         H[np.array([3, 4, 5, 6, 7, 8]), np.array([6, 7, 8, 3, 4, 5])] = lambda kx, ky: -self.Del0
         #nn AB
-        H[np.array([0, 1, 9, 10]), np.array([10, 9, 1, 0])] = lambda kx, ky: 2*self.DelA*np.cos(kx/2)
-        H[np.array([3, 4, 6, 7]), np.array([7, 6, 4, 3])] = lambda kx, ky: -2*self.DelA*np.cos(kx/2)
+        H[np.array([0, 1, 9, 10]), np.array([10, 9, 1, 0])] = lambda kx, ky: 2*DelA*np.cos(kx/2)
+        H[np.array([3, 4, 6, 7]), np.array([7, 6, 4, 3])] = lambda kx, ky: -2*DelA*np.cos(kx/2)
         #nn BC
-        H[np.array([1, 2, 10, 11]), np.array([11, 10, 2, 1])] = lambda kx, ky: 2*self.DelB*np.cos(ky/2)
-        H[np.array([4, 5, 7, 8]), np.array([8, 7, 5, 4])] = lambda kx, ky: -2*self.DelB*np.cos(ky/2)
+        H[np.array([1, 2, 10, 11]), np.array([11, 10, 2, 1])] = lambda kx, ky: 2*DelB*np.cos(ky/2)
+        H[np.array([4, 5, 7, 8]), np.array([8, 7, 5, 4])] = lambda kx, ky: -2*DelB*np.cos(ky/2)
 
-        if self.dwave:
-            self.DelB = -self.DelA 
-        else:
-            self.DelB = self.DelA
+        #if self.dwave:
+        #    self.DelB = -self.DelA 
+        #else:
+        #    self.DelB = self.DelA
         
         def Hk(kx, ky): 
             """Evaluate the Hamiltonian at given kx, ky."""
@@ -72,7 +75,10 @@ class Model:
         eig = np.zeros((n, 12))
     
         for i in range(n):
-            e = np.linalg.eigvalsh(self.Hk(kx[i], ky[i])) #np.linalg.eig(self.Hk(kx[i], ky[i]))[0]
+            #e = np.linalg.eigvalsh(self.Hk(kx[i], ky[i])) #
+            r = np.linalg.eig(self.Hk(kx[i], ky[i]))
+            e = r[0]
+            ev = r[1]
             e[np.abs(e)<eps]=0
             eig[i]=np.sort(e)
             
@@ -104,15 +110,51 @@ class Model:
             
         En = self.Es(k)
         b, l = np.shape(En)
-        arr0 = np.ones(l)
+        arr1 = np.ones(l)
         s1 = 0
         res = np.ones(np.shape(E)[0])
         c=0
         for j in E:
             for i in range(b):
-                s1 += np.sum(Gauss(j*arr0,En[i], sig))
+                s1 += np.sum(Gauss(j*arr1,En[i], sig))
             res[c] = s1
             s1=0
             c+=1
         return res
+    def simple_stats(self):
+        '''
+        Simple calculation of statistical values over path in BZ: Gamma -> X -> M -> Gamma = (0,0) -> (2pi, 0) -> (2pi, 2pi) -> 0,0
+        
+        returns: 
+            average energy and standard deviation of each band
+            max and min E for each band
+            minimal energy gap between each neighbouring band (in order from lowest to highest band)
+            average energy gap between each neighbouring band (in order from lowest to highest band)
+        '''
+        k = np.linspace(0, 2*np.pi, 100)
+
+        k1 = np.ones(100)
+        k0 = np.zeros(100)
+
+        kx = np.concatenate((k,np.pi*2*k1, k[::-1]))
+        ky = np.concatenate((k0, k, k[::-1]))
+
+        E = self.solvHam(kx, ky)
+
+        av = np.average(E, axis=1)
+        stde = np.std(E, axis=1)
+        maxe = np.amax(np.abs(E), axis=1)
+        mine = np.amin(np.abs(E), axis=1)
+        egap = np.ones(5)
+        for i in range(5):
+            egap[i] = np.amin(np.abs(E[2*i]-E[2*(i+1)]))
+        egap_av = np.ones(5)
+        for i in range(5):
+            egap_av[i] = np.average(np.abs(E[2*i]-E[2*(i+1)]))
+        stats = {'av': av, 'std': stde, 'max': maxe, 'min': mine, 'mingap': egap, 'avgap': egap_av}
+
+        return stats
+
+
+
     
