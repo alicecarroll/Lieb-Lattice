@@ -10,7 +10,7 @@ class Model:
         # Internal variables are named with _ for convention
         self.Del0 = kwargs.get('Del0', 0.0)
         self.DelD = kwargs.get('Deld', 0.0)
-        self.DelS = kwargs.get('Dels', 1.0)
+        self.DelS = kwargs.get('Dels', 0.0)
 
         #self.dwave = kwargs.get('dwave', False)
 
@@ -141,6 +141,7 @@ class Model:
 
         E = self.solvHam(kx, ky)
 
+        maxe = np.amax(E, axis=1)
         av = np.average(E, axis=1)
         stde = np.std(E, axis=1)
         maxe = np.amax(np.abs(E), axis=1)
@@ -151,7 +152,7 @@ class Model:
         egap_av = np.ones(5)
         for i in range(5):
             egap_av[i] = np.average(np.abs(E[2*i]-E[2*(i+1)]))
-        stats = {'av': av, 'std': stde, 'max': maxe, 'min': mine, 'mingap': egap, 'avgap': egap_av}
+        stats = {'maxe': maxe, 'av': av, 'std': stde, 'max': maxe, 'min': mine, 'mingap': egap, 'avgap': egap_av}
 
         return stats
 
