@@ -6,15 +6,27 @@ class Model:
 
         self.t = kwargs.get('t', 1.0) # Hopping parameter
         self.mu = kwargs.get('mu', 0.0) # Chemical potential
-
         # Internal variables are named with _ for convention
         self.Del0 = kwargs.get('Del0', 0.0)
         self.DelD = kwargs.get('Deld', 0.0)
         self.DelS = kwargs.get('Dels', 0.0)
+        # Inhomogeneous pairing/site?
+        self.inhomp = kwargs.get('inhomp', False)
+        self.inhomi = kwargs.get('inhomi', False)
 
+        #self.muB = kwargs.get('muB', 0.0)
+        #self.Del0B = kwargs.get('Del0B', 0.0)
         #self.dwave = kwargs.get('dwave', False)
 
         self.Hk = self.HBdG()
+
+        #special treatment of B site
+        self.muB = self.mu
+        self.Del0B = self.Del0
+        if self.inhomp:
+            self.mu=1
+        if self.inhomi:
+            self.Del0 = 1
 
     def HBdG(self):
         """Construct the real space sparse Hamiltonian function."""
@@ -26,9 +38,12 @@ class Model:
         DelA = self.DelS+self.DelD
         DelB = self.DelS-self.DelD
 
+        
+        
+        
         #diagonals
-        for i in range(6): H[i,i] = lambda kx, ky: self.mu
-        for i in range(6,12): H[i, i] = lambda kx, ky: - self.mu
+        H[np.array([0, 2, 3, 5]), np.array([0, 2, 3, 5])] = lambda kx, ky: self.mu
+        H[np.array([6, 8, 9, 11]), np.array([6, 8, 9, 11])] = lambda kx, ky: - self.mu
         #H[np.array]
         #h
         H[np.array([0, 1, 3, 4]), np.array([1, 0, 4, 3])] = lambda kx, ky: -2*self.t * np.cos(kx/2) # Some function of kx, ky
@@ -39,8 +54,8 @@ class Model:
         
         #Del
         #on site
-        H[np.array([0, 1, 2, 9, 10, 11]), np.array([9, 10, 11, 0, 1, 2])] = lambda kx, ky: self.Del0
-        H[np.array([3, 4, 5, 6, 7, 8]), np.array([6, 7, 8, 3, 4, 5])] = lambda kx, ky: -self.Del0
+        H[np.array([0, 2, 9, 11]), np.array([9, 11, 0, 2])] = lambda kx, ky: self.Del0
+        H[np.array([3, 5, 6, 8]), np.array([6, 8, 3, 5])] = lambda kx, ky: -self.Del0
         #nn AB
         H[np.array([0, 1, 9, 10]), np.array([10, 9, 1, 0])] = lambda kx, ky: 2*DelA*np.cos(kx/2)
         H[np.array([3, 4, 6, 7]), np.array([7, 6, 4, 3])] = lambda kx, ky: -2*DelA*np.cos(kx/2)
@@ -48,6 +63,11 @@ class Model:
         H[np.array([1, 2, 10, 11]), np.array([11, 10, 2, 1])] = lambda kx, ky: 2*DelB*np.cos(ky/2)
         H[np.array([4, 5, 7, 8]), np.array([8, 7, 5, 4])] = lambda kx, ky: -2*DelB*np.cos(ky/2)
 
+        #special treatment of B site
+        H[np.array([1, 4]), np.array([1, 4])] = lambda kx, ky: self.muB
+        H[np.array([7, 10]), np.array([7, 10])] = lambda kx, ky: -self.muB
+        H[np.array([1, 10]), np.array([10, 1])] = lambda kx, ky: self.Del0B
+        H[np.array([4, 7]), np.array([7, 4])] = lambda kx, ky: -self.Del0B
         #if self.dwave:
         #    self.DelB = -self.DelA 
         #else:
@@ -55,6 +75,8 @@ class Model:
         
         def Hk(kx, ky): 
             """Evaluate the Hamiltonian at given kx, ky."""
+            
+            
             hk = np.empty_like(H, dtype=complex)
             #hk = np.empty_like(H, dtype=float)
             eps = 1e-15
@@ -75,10 +97,10 @@ class Model:
         eig = np.zeros((n, 12))
     
         for i in range(n):
-            #e = np.linalg.eigvalsh(self.Hk(kx[i], ky[i])) #
-            r = np.linalg.eig(self.Hk(kx[i], ky[i]))
-            e = r[0]
-            ev = r[1]
+            e = np.linalg.eigvalsh(self.Hk(kx[i], ky[i])) #
+            #r = np.linalg.eig(self.Hk(kx[i], ky[i]))
+            #e = r[0]
+            #ev = r[1]
             e[np.abs(e)<eps]=0
             eig[i]=np.sort(e)
             
