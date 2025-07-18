@@ -6,8 +6,13 @@ class Model:
 
         self.t = kwargs.get('t', 1.0) # Hopping parameter
         self.mu = kwargs.get('mu', 0.0) # Chemical potential
+        self.muB = kwargs.get('muB', 0.0)
+
         # Internal variables are named with _ for convention
         self.Del0 = kwargs.get('Del0', 0.0)
+        self.Del0A = kwargs.get('Del0A', 0.0)
+        self.Del0C = kwargs.get('Del0C', 0.0)
+
         self.DelD = kwargs.get('Deld', 0.0)
         self.DelS = kwargs.get('Dels', 0.0)
         # Inhomogeneous pairing/site?
@@ -21,12 +26,20 @@ class Model:
         self.Hk = self.HBdG()
 
         #special treatment of B site
-        self.muB = self.mu
+        
+        #self.muA = self.mu
+        #self.muC = self.mu
         self.Del0B = self.Del0
-        if self.inhomp:
-            self.mu=1
-        if self.inhomi:
-            self.Del0 = 1
+        
+        if not self.inhomp:
+            self.muB = self.mu
+        
+            #self.muA = self.mu
+            #self.muC = self.mu
+        if not self.inhomi:
+            #self.Del0 = 0
+            self.Del0A = self.Del0
+            self.Del0C = self.Del0
 
     def HBdG(self):
         """Construct the real space sparse Hamiltonian function."""
@@ -51,8 +64,8 @@ class Model:
         
         #Del
         #on site
-        H[np.array([0, 2, 9, 11]), np.array([9, 11, 0, 2])] = lambda kx, ky: self.Del0
-        H[np.array([3, 5, 6, 8]), np.array([6, 8, 3, 5])] = lambda kx, ky: -self.Del0
+        #H[np.array([0, 2, 9, 11]), np.array([9, 11, 0, 2])] = lambda kx, ky: self.Del0
+        #H[np.array([3, 5, 6, 8]), np.array([6, 8, 3, 5])] = lambda kx, ky: -self.Del0
         #nn AB
         H[np.array([0, 1, 9, 10]), np.array([10, 9, 1, 0])] = lambda kx, ky: 2*DelA*np.cos(kx/2)
         H[np.array([3, 4, 6, 7]), np.array([7, 6, 4, 3])] = lambda kx, ky: -2*DelA*np.cos(kx/2)
@@ -63,8 +76,14 @@ class Model:
         #special treatment of B site
         H[np.array([1, 4]), np.array([1, 4])] = lambda kx, ky: self.muB
         H[np.array([7, 10]), np.array([7, 10])] = lambda kx, ky: -self.muB
+
+
         H[np.array([1, 10]), np.array([10, 1])] = lambda kx, ky: self.Del0B
         H[np.array([4, 7]), np.array([7, 4])] = lambda kx, ky: -self.Del0B
+        H[np.array([0, 9]), np.array([9, 0])] = lambda kx, ky: self.Del0A
+        H[np.array([3, 6]), np.array([6, 3])] = lambda kx, ky: -self.Del0A
+        H[np.array([2, 11]), np.array([11, 2])] = lambda kx, ky: self.Del0C
+        H[np.array([5, 8]), np.array([8, 5])] = lambda kx, ky: -self.Del0C
         #if self.dwave:
         #    self.DelB = -self.DelA 
         #else:
@@ -180,6 +199,7 @@ class TripletModel:
 
         self.t = kwargs.get('t', 1.0) # Hopping parameter
         self.mu = kwargs.get('mu', 0.0) # Chemical potential
+        self.muB = kwargs.get('muB', 0.0)
         # Internal variables are named with _ for convention
         self.left = kwargs.get('left', 0.0)
         self.right = kwargs.get('right', 0.0)
@@ -192,12 +212,13 @@ class TripletModel:
         #self.dwave = kwargs.get('dwave', False)
 
         self.Hk = self.HBdG()
+        self.DelA = -self.left + self.right
 
         #special treatment of B site
-        self.muB = self.mu
+        
         #self.Del0B = self.Del0
-        if self.inhomp:
-            self.mu=1
+        if not self.inhomp:
+            self.muB = self.mu
         #if self.inhomi:
         #    self.Del0 = 1
 
@@ -208,12 +229,15 @@ class TripletModel:
         #H = self.mu*H
         for index, _ in np.ndenumerate(H): H[index] = lambda kx, ky: 0
 
-        DelA = -self.left + self.right
 
         #diagonals
         H[np.array([0, 2, 3, 5]), np.array([0, 2, 3, 5])] = lambda kx, ky: self.mu
         H[np.array([6, 8, 9, 11]), np.array([6, 8, 9, 11])] = lambda kx, ky: - self.mu
-
+        
+        #special treatment of B site
+        H[np.array([1, 4]), np.array([1, 4])] = lambda kx, ky: self.muB
+        H[np.array([7, 10]), np.array([7, 10])] = lambda kx, ky: -self.muB
+        
         #h
         H[np.array([0, 1, 3, 4]), np.array([1, 0, 4, 3])] = lambda kx, ky: -2*self.t * np.cos(kx/2) # Some function of kx, ky
         H[np.array([1, 2, 4, 5]), np.array([2, 1, 5, 4])] = lambda kx, ky: -2*self.t * np.cos(ky/2) 
@@ -226,14 +250,11 @@ class TripletModel:
         #H[np.array([0, 2, 9, 11]), np.array([9, 11, 0, 2])] = lambda kx, ky: self.Del0
         #H[np.array([3, 5, 6, 8]), np.array([6, 8, 3, 5])] = lambda kx, ky: -self.Del0
         #nn 
-        H[np.array([0, 1]), np.array([7, 6])] = lambda kx, ky: 2*(0+1j)*DelA*np.sin(kx/2)
-        H[np.array([6, 7]), np.array([1, 0])] = lambda kx, ky: -2*(0+1j)*DelA*np.sin(kx/2)
-        H[np.array([1,8]), np.array([8,1])] = lambda kx, ky: -2*DelA*np.sin(ky/2)
-        H[np.array([2, 7]), np.array([7, 2])] = lambda kx, ky: -2*DelA*np.sin(ky/2)
+        H[np.array([0, 1]), np.array([7, 6])] = lambda kx, ky: 2*(0+1j)*np.abs(self.DelA)*np.sin(kx/2)
+        H[np.array([6, 7]), np.array([1, 0])] = lambda kx, ky: -2*(0+1j)*np.abs(self.DelA)*np.sin(kx/2)
+        H[np.array([1, 2, 7,8]), np.array([8, 7, 2, 1])] = lambda kx, ky: 2*self.DelA*np.sin(ky/2)
         
-        #special treatment of B site
-        H[np.array([1, 4]), np.array([1, 4])] = lambda kx, ky: self.muB
-        H[np.array([7, 10]), np.array([7, 10])] = lambda kx, ky: -self.muB
+        
         
         def Hk(kx, ky): 
             """Evaluate the Hamiltonian at given kx, ky."""

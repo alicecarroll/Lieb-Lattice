@@ -1,0 +1,11 @@
+x-axis: $\Delta_0=0$; y-axis: $\mu$
+Del0=(0, 0, 0)...(0, 0, 0)
+Del0A=0
+Del0B=0
+Del0C=0
+Deld=0
+Dels=0
+mu=0
+t=1.0
+inhomogeneous potential=False
+inhomogeneous on-site interaction=False
