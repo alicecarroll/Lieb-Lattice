@@ -1,0 +1,6 @@
+x-axis: $\Delta_{p_x+ip_y}$; y-axis: $\mu$
+left=1.5789473684210527
+right=0
+mu=1
+t=1.0
+inhomogeneous potential=False

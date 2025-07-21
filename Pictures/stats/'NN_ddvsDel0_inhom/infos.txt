@@ -1,0 +1,11 @@
+x-axis: $\Delta_{d}$; y-axis: $\Delta_{A/C}$
+Del0=(0, 0.0, 0)...(0, 3.0, 0)
+Del0A=1
+Del0B=0
+Del0C=1
+Deld=1.5789473684210527
+Dels=0
+mu=0
+t=1.0
+inhomogeneous potential=False
+inhomogeneous on-site interaction=True
