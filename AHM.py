@@ -103,7 +103,64 @@ class Model:
             
         return eig.T
     
-    
+    def rel_err(self, kx, ky):
+        evals, Evec = np.linalg.eig(self.Hk(kx, ky))
+        Evec = Evec.T
+        evals[np.abs(evals)<1e-15]=0
+        Evec[np.abs(Evec)<1e-15]=0
+
+        sortedEVals = np.zeros(12)
+        indexmap = np.zeros(12)
+        degen = []
+        
+        d =0
+        inbet = np.unique(evals)[::-1]
+        l=np.shape(inbet)[0]
+        for t in range(l):
+            for i, j in enumerate(evals):
+                if j == inbet[t]:
+                    indexmap[sum(degen)+d]=i
+                    d+=1
+
+            sortedEVals[sum(degen):sum(degen)+d]=inbet[t]
+            degen.append(d)              
+
+            d=0
+
+
+        Carr = np.zeros((12,12))
+        for i in range(12):
+            Carr[i]=Evec[int(indexmap[i])]
+        Carr=np.round(Carr, 6)
+
+        Uarr = np.zeros((12,12))
+        c=0
+        c2=0
+        for t in range(6):
+            for j in range(6,12):
+            
+                for s in range(6):
+                    if (Carr[t, s]==Carr[j, s+6] and Carr[t, s+6]==Carr[j, s]) or (Carr[t, s]==Carr[j, s+6]*(-1) and Carr[t, s+6]==Carr[j, s]*(-1)):
+                        c+=1
+
+
+                    if Carr[t, s]==Carr[j, s+6]*(-1) and Carr[t, s+6]==Carr[j, s]*(-1):
+                        c2+=1
+
+                if c2==6:
+                    Carr[j]=Carr[j]*(-1)
+                if c==6:
+                    Uarr[t]=Carr[t]
+                    Uarr[t+6]=Carr[j]
+                c=0
+                c2=0
+        u=Uarr[0:6, 0:6]
+        v=Uarr[0:6,6:]   
+        BigD =np.matmul(u.T, v)
+        D=np.diag(np.matmul(Uarr,np.matmul(self.Hk(kx, ky), Uarr.T)))
+        #print(D)
+        return BigD
+
 
     def Es(self, k):
         #E=np.array([[],[],[]])
