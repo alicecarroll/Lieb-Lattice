@@ -62,14 +62,23 @@ class Model:
 
         #Del
         #on site
-        H[np.array([0, 9]), np.array([9, 0])] = lambda kx, ky: self.Del0A
-        H[np.array([3, 6]), np.array([6, 3])] = lambda kx, ky: -self.Del0A
+        H[np.array([0]), np.array([9])] = lambda kx, ky: self.Del0A
+        H[np.array([9]), np.array([0])] = lambda kx, ky: np.conjugate(self.Del0A)
 
-        H[np.array([1, 10]), np.array([10, 1])] = lambda kx, ky: self.Del0B
-        H[np.array([4, 7]), np.array([7, 4])] = lambda kx, ky: -self.Del0B
+        H[np.array([3]), np.array([6])] = lambda kx, ky: -self.Del0A
+        H[np.array([6]), np.array([3])] = lambda kx, ky: -np.conjugate(self.Del0A)
+
+        H[np.array([1]), np.array([10])] = lambda kx, ky: self.Del0B
+        H[np.array([10]), np.array([1])] = lambda kx, ky: np.conjugate(self.Del0B)
+
+        H[np.array([4]), np.array([7])] = lambda kx, ky: -self.Del0B
+        H[np.array([7]), np.array([4])] = lambda kx, ky: -np.conjugate(self.Del0B)
         
-        H[np.array([2, 11]), np.array([11, 2])] = lambda kx, ky: self.Del0C
-        H[np.array([5, 8]), np.array([8, 5])] = lambda kx, ky: -self.Del0C
+        H[np.array([2]), np.array([11])] = lambda kx, ky: self.Del0C
+        H[np.array([11]), np.array([2])] = lambda kx, ky: np.conjugate(self.Del0C)
+
+        H[np.array([5]), np.array([8])] = lambda kx, ky: -self.Del0C
+        H[np.array([8]), np.array([5])] = lambda kx, ky: -np.conjugate(self.Del0C)
       
         
         def Hk(kx, ky): 
@@ -103,63 +112,137 @@ class Model:
             
         return eig.T
     
-    def rel_err(self, kx, ky):
-        evals, Evec = np.linalg.eig(self.Hk(kx, ky))
-        Evec = Evec.T
-        evals[np.abs(evals)<1e-15]=0
-        Evec[np.abs(Evec)<1e-15]=0
+    def DeltaN(self, k):
+        le = np.shape(k)[0]
+        Delta=np.zeros((6,6), dtype=object)
+        Nu=np.zeros((6,6), dtype=object)
 
-        sortedEVals = np.zeros(12)
-        indexmap = np.zeros(12)
-        degen = []
+        eps = 1e-15
+
+        for x in k:
+            for y in k:
+                evals, Evec = np.linalg.eig(self.Hk(x, y))
+                Evec = Evec.T
+                evals[np.abs(evals)<eps]=0
+                Evec[np.abs(Evec)<eps]=0
+
+                sortedEVals = np.zeros(12)
+                indexmap = np.zeros(12)
+                degen = []
         
-        d =0
-        inbet = np.unique(evals)[::-1]
-        l=np.shape(inbet)[0]
-        for t in range(l):
-            for i, j in enumerate(evals):
-                if j == inbet[t]:
-                    indexmap[sum(degen)+d]=i
-                    d+=1
+                d =0
+                inbet = np.unique(evals)[::-1]
+                l=np.shape(inbet)[0]
+                for t in range(l):
+                    for i, j in enumerate(evals):
+                        if j == inbet[t]:
+                            indexmap[sum(degen)+d]=i
+                            d+=1
 
-            sortedEVals[sum(degen):sum(degen)+d]=inbet[t]
-            degen.append(d)              
+                    sortedEVals[sum(degen):sum(degen)+d]=inbet[t]
+                    degen.append(d)              
 
-            d=0
+                    d=0
+
+                Carr = np.zeros((12,12), dtype=object)
+                for i in range(12):
+                    Carr[i]=Evec[int(indexmap[i])]
+                Carr[np.abs(Carr)<1e-15]=0
+        
+                u=Carr[0:6, 0:6]
+                v=Carr[0:6,6:]   
+                el =np.matmul(np.conjugate(u.T), v)
+                nu_el = np.matmul(np.conjugate(v.T), v)
+                Delta+=el
+                Nu+=nu_el
+        
+        finDel = -self.U/le**2*Delta
+        finNu = np.diag(Nu)/le**2
+        nuA = finNu[0]+finNu[3]
+        nuB = finNu[1]+finNu[4]
+        nuC = finNu[2]+finNu[5]
+        dan=finDel[3,0]
+        dbn=finDel[4, 1]
+        dcn=finDel[5, 2]
 
 
-        Carr = np.zeros((12,12))
-        for i in range(12):
-            Carr[i]=Evec[int(indexmap[i])]
-        Carr=np.round(Carr, 6)
+        return [dan, dbn, dcn], [nuA, nuB, nuC]
+        
+    def Deltra(self, k, N=20):
+        dan, dbn, dcn = (self.Del0A, self.Del0B, self.Del0C)
+        na, nb, nc = (self.nA, self.nB, self.nC)
+        dels = np.array([[],[],[]])
+        nus = np.array([[],[],[]])
+        #r = []
+        r2 = []
+        for i in range(N):
+            #print(i, (dan, dbn, dcn))
+            da, db, dc = (dan, dbn, dcn)
+            delarro = np.array([da, db, dc])
+            nA, nB, nC = (na, nb, nc)
+            nuarro = np.array([nA, nB, nC])
 
-        Uarr = np.zeros((12,12))
-        c=0
-        c2=0
-        for t in range(6):
-            for j in range(6,12):
+            dels = np.concatenate((dels, delarro.reshape(3,1)), axis=1)
+            nus = np.concatenate((nus, nuarro.reshape(3,1)), axis=1)
             
-                for s in range(6):
-                    if (Carr[t, s]==Carr[j, s+6] and Carr[t, s+6]==Carr[j, s]) or (Carr[t, s]==Carr[j, s+6]*(-1) and Carr[t, s+6]==Carr[j, s]*(-1)):
-                        c+=1
+            self.Del0A =da
+            self.Del0B = db
+            self.Del0C = dc
+            self.nA = nA
+            self.nB = nB
+            self.nC = nC
 
+            Delta = self.DeltaN(k)[0]
+            dan=Delta[0]
+            dbn=Delta[1]
+            dcn=Delta[2]
 
-                    if Carr[t, s]==Carr[j, s+6]*(-1) and Carr[t, s+6]==Carr[j, s]*(-1):
-                        c2+=1
+            Nu = self.DeltaN(k)[1]
+            na=Nu[0]
+            nb=Nu[1]
+            nc=Nu[2]
 
-                if c2==6:
-                    Carr[j]=Carr[j]*(-1)
-                if c==6:
-                    Uarr[t]=Carr[t]
-                    Uarr[t+6]=Carr[j]
-                c=0
-                c2=0
-        u=Uarr[0:6, 0:6]
-        v=Uarr[0:6,6:]   
-        BigD =np.matmul(u.T, v)
-        D=np.diag(np.matmul(Uarr,np.matmul(self.Hk(kx, ky), Uarr.T)))
-        #print(D)
-        return BigD
+            delarrn = np.array([dan, dbn, dcn])
+    
+            #err = [np.abs(dan-da)/np.abs(dan), np.abs(dbn-db)/np.abs(dbn), np.abs(dcn-dc)/np.abs(dcn)]
+            err2 = np.sqrt(np.sum((delarrn-delarro)**2))/(np.sqrt(np.sum(delarro**2)+1e-9))
+            #r.append(err)
+            r2.append(err2)
+            
+
+        #r=np.array(r)
+        r2 = np.array(r2)
+        return dels, r2, nus
+
+    def Nutra(self, k, N=20):
+        dan, dbn, dcn = (self.Del0A, self.Del0B, self.Del0C)
+        dels = np.array([[],[],[]])
+        #r = []
+        r2 = []
+        for i in range(N):
+            #print(i, (dan, dbn, dcn))
+            da, db, dc = (dan, dbn, dcn)
+            delarro = np.array([da, db, dc])
+            dels = np.concatenate((dels, delarro.reshape(3,1)), axis=1)
+            self.Del0A =da
+            self.Del0B = db
+            self.Del0C = dc
+            
+            Delta = self.DeltaN(k)[0]
+            dan=Delta[0]
+            dbn=Delta[1]
+            dcn=Delta[2]
+            delarrn = np.array([dan, dbn, dcn])
+    
+            #err = [np.abs(dan-da)/np.abs(dan), np.abs(dbn-db)/np.abs(dbn), np.abs(dcn-dc)/np.abs(dcn)]
+            err2 = np.sqrt(np.sum((delarrn-delarro)**2))/(np.sqrt(np.sum(delarro**2)+1e-9))
+            #r.append(err)
+            r2.append(err2)
+            
+
+        #r=np.array(r)
+        r2 = np.array(r2)
+        return dels, r2
 
 
     def Es(self, k):
