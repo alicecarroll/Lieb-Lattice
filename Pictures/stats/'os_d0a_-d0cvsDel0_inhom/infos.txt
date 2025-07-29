@@ -7,5 +7,5 @@ Deld=0
 Dels=0
 mu=3
 t=1.0
-inhomogeneous potential=False
+inhomogeneous potential=True
 inhomogeneous on-site interaction=True

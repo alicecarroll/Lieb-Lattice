@@ -44,13 +44,13 @@ class Model:
 
 
         #diagonals
-        H[np.array([0, 3]), np.array([0, 3])] = lambda kx, ky: self.mu+self.nA/4*self.U
-        H[np.array([2, 5]), np.array([2, 5])] = lambda kx, ky: self.mu+self.nC/4*self.U
-        H[np.array([6, 9]), np.array([6, 9])] = lambda kx, ky: - self.mu-self.nA/4*self.U
-        H[np.array([8, 11]), np.array([8, 11])] = lambda kx, ky: - self.mu-self.nC/4*self.U
+        H[np.array([0, 3]), np.array([0, 3])] = lambda kx, ky: -self.mu+self.nA/4*self.U
+        H[np.array([2, 5]), np.array([2, 5])] = lambda kx, ky: -self.mu+self.nC/4*self.U
+        H[np.array([6, 9]), np.array([6, 9])] = lambda kx, ky:  self.mu-self.nA/4*self.U
+        H[np.array([8, 11]), np.array([8, 11])] = lambda kx, ky:  self.mu-self.nC/4*self.U
         #special treatment of B site
-        H[np.array([1, 4]), np.array([1, 4])] = lambda kx, ky: self.muB + self.nB/4*self.U
-        H[np.array([7, 10]), np.array([7, 10])] = lambda kx, ky: -self.muB- self.nB/4*self.U
+        H[np.array([1, 4]), np.array([1, 4])] = lambda kx, ky: -self.muB + self.nB/4*self.U
+        H[np.array([7, 10]), np.array([7, 10])] = lambda kx, ky: self.muB- self.nB/4*self.U
         
         #h
         H[np.array([0, 1, 3, 4]), np.array([1, 0, 4, 3])] = lambda kx, ky: -2*self.t * np.cos(kx/2) # Some function of kx, ky
@@ -168,22 +168,27 @@ class Model:
 
         return [dan, dbn, dcn], [nuA, nuB, nuC]
         
-    def Deltra(self, k, N=20):
+    def Deltra(self, k, N=20, alpha=0):
         dan, dbn, dcn = (self.Del0A, self.Del0B, self.Del0C)
+        delarrn = np.array([dan, dbn, dcn])
         na, nb, nc = (self.nA, self.nB, self.nC)
-        dels = np.array([[],[],[]])
-        nus = np.array([[],[],[]])
+        dels = delarrn.reshape(3,1)
+        ns = np.array([[],[],[]])
         #r = []
-        r2 = []
-        for i in range(N):
-            #print(i, (dan, dbn, dcn))
+        r2 = np.array([1, 1, 1, 1, 1])
+        c=0
+        while (c<N and (np.abs(r2[-5:])>0.001).all()) or c<10:
+        #for i in range(N):
+            print(c, (dan, dbn, dcn))
+            c+=1
             da, db, dc = (dan, dbn, dcn)
-            delarro = np.array([da, db, dc])
+            delarro = delarrn
             nA, nB, nC = (na, nb, nc)
+            nuarrn = np.array([na, nb, nc])
             nuarro = np.array([nA, nB, nC])
 
             dels = np.concatenate((dels, delarro.reshape(3,1)), axis=1)
-            nus = np.concatenate((nus, nuarro.reshape(3,1)), axis=1)
+            ns = np.concatenate((ns, nuarro.reshape(3,1)), axis=1)
             
             self.Del0A =da
             self.Del0B = db
@@ -203,16 +208,19 @@ class Model:
             nc=Nu[2]
 
             delarrn = np.array([dan, dbn, dcn])
-    
+            nuarrn = np.array([na, nb, nc])
+
+            delarrn = alpha*delarro+(1-alpha)*delarrn
+            nuarrn = alpha*nuarro+(1-alpha)*nuarrn
             #err = [np.abs(dan-da)/np.abs(dan), np.abs(dbn-db)/np.abs(dbn), np.abs(dcn-dc)/np.abs(dcn)]
-            err2 = np.sqrt(np.sum((delarrn-delarro)**2))/(np.sqrt(np.sum(delarro**2)+1e-9))
+            err2 = np.sqrt(np.sum((np.abs(dels[:,-1])-np.abs(dels[:,-2]))**2))/(np.sqrt(np.sum(np.abs(dels[:,-2])**2)+1e-9))
             #r.append(err)
-            r2.append(err2)
+            r2=np.concatenate((r2,np.array([err2])), axis=0)
             
 
         #r=np.array(r)
-        r2 = np.array(r2)
-        return dels, r2, nus
+        
+        return dels, r2, ns
 
     def Nutra(self, k, N=20):
         dan, dbn, dcn = (self.Del0A, self.Del0B, self.Del0C)
