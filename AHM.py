@@ -177,9 +177,9 @@ class Model:
         #r = []
         r2 = np.array([1, 1, 1, 1, 1])
         c=0
-        while (c<N and (np.abs(r2[-5:])>0.001).all()) or c<10:
+        while (c<N and (np.abs(r2[-5:])>0.01).all()) or c<10:
         #for i in range(N):
-            print(c, (dan, dbn, dcn))
+            print(c, r2[-1])
             c+=1
             da, db, dc = (dan, dbn, dcn)
             delarro = delarrn
@@ -221,37 +221,6 @@ class Model:
         #r=np.array(r)
         
         return dels, r2, ns
-
-    def Nutra(self, k, N=20):
-        dan, dbn, dcn = (self.Del0A, self.Del0B, self.Del0C)
-        dels = np.array([[],[],[]])
-        #r = []
-        r2 = []
-        for i in range(N):
-            #print(i, (dan, dbn, dcn))
-            da, db, dc = (dan, dbn, dcn)
-            delarro = np.array([da, db, dc])
-            dels = np.concatenate((dels, delarro.reshape(3,1)), axis=1)
-            self.Del0A =da
-            self.Del0B = db
-            self.Del0C = dc
-            
-            Delta = self.DeltaN(k)[0]
-            dan=Delta[0]
-            dbn=Delta[1]
-            dcn=Delta[2]
-            delarrn = np.array([dan, dbn, dcn])
-    
-            #err = [np.abs(dan-da)/np.abs(dan), np.abs(dbn-db)/np.abs(dbn), np.abs(dcn-dc)/np.abs(dcn)]
-            err2 = np.sqrt(np.sum((delarrn-delarro)**2))/(np.sqrt(np.sum(delarro**2)+1e-9))
-            #r.append(err)
-            r2.append(err2)
-            
-
-        #r=np.array(r)
-        r2 = np.array(r2)
-        return dels, r2
-
 
     def Es(self, k):
         #E=np.array([[],[],[]])
