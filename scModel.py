@@ -52,8 +52,8 @@ class Model:
         DelB = self.DelS-self.DelD
 
         #diagonals
-        H[np.array([0, 2, 3, 5]), np.array([0, 2, 3, 5])] = lambda kx, ky: self.mu
-        H[np.array([6, 8, 9, 11]), np.array([6, 8, 9, 11])] = lambda kx, ky: - self.mu
+        H[np.array([0, 2, 3, 5]), np.array([0, 2, 3, 5])] = lambda kx, ky: -self.mu
+        H[np.array([6, 8, 9, 11]), np.array([6, 8, 9, 11])] = lambda kx, ky:  self.mu
 
         #h
         H[np.array([0, 1, 3, 4]), np.array([1, 0, 4, 3])] = lambda kx, ky: -2*self.t * np.cos(kx/2) # Some function of kx, ky
@@ -74,16 +74,33 @@ class Model:
         H[np.array([4, 5, 7, 8]), np.array([8, 7, 5, 4])] = lambda kx, ky: -2*DelB*np.cos(ky/2)
 
         #special treatment of B site
-        H[np.array([1, 4]), np.array([1, 4])] = lambda kx, ky: self.muB
-        H[np.array([7, 10]), np.array([7, 10])] = lambda kx, ky: -self.muB
+        H[np.array([1, 4]), np.array([1, 4])] = lambda kx, ky: -self.muB
+        H[np.array([7, 10]), np.array([7, 10])] = lambda kx, ky: self.muB
 
+        H[np.array([0]), np.array([9])] = lambda kx, ky: self.Del0A
+        H[np.array([9]), np.array([0])] = lambda kx, ky: np.conjugate(self.Del0A)
 
-        H[np.array([1, 10]), np.array([10, 1])] = lambda kx, ky: self.Del0B
-        H[np.array([4, 7]), np.array([7, 4])] = lambda kx, ky: -self.Del0B
-        H[np.array([0, 9]), np.array([9, 0])] = lambda kx, ky: self.Del0A
-        H[np.array([3, 6]), np.array([6, 3])] = lambda kx, ky: -self.Del0A
-        H[np.array([2, 11]), np.array([11, 2])] = lambda kx, ky: self.Del0C
-        H[np.array([5, 8]), np.array([8, 5])] = lambda kx, ky: -self.Del0C
+        H[np.array([3]), np.array([6])] = lambda kx, ky: -self.Del0A
+        H[np.array([6]), np.array([3])] = lambda kx, ky: -np.conjugate(self.Del0A)
+
+        H[np.array([1]), np.array([10])] = lambda kx, ky: self.Del0B
+        H[np.array([10]), np.array([1])] = lambda kx, ky: np.conjugate(self.Del0B)
+
+        H[np.array([4]), np.array([7])] = lambda kx, ky: -self.Del0B
+        H[np.array([7]), np.array([4])] = lambda kx, ky: -np.conjugate(self.Del0B)
+        
+        H[np.array([2]), np.array([11])] = lambda kx, ky: self.Del0C
+        H[np.array([11]), np.array([2])] = lambda kx, ky: np.conjugate(self.Del0C)
+
+        H[np.array([5]), np.array([8])] = lambda kx, ky: -self.Del0C
+        H[np.array([8]), np.array([5])] = lambda kx, ky: -np.conjugate(self.Del0C)
+
+        #H[np.array([1, 10]), np.array([10, 1])] = lambda kx, ky: self.Del0B
+        #H[np.array([4, 7]), np.array([7, 4])] = lambda kx, ky: -self.Del0B
+        #H[np.array([0, 9]), np.array([9, 0])] = lambda kx, ky: self.Del0A
+        #H[np.array([3, 6]), np.array([6, 3])] = lambda kx, ky: -self.Del0A
+        #H[np.array([2, 11]), np.array([11, 2])] = lambda kx, ky: self.Del0C
+        #H[np.array([5, 8]), np.array([8, 5])] = lambda kx, ky: -self.Del0C
         #if self.dwave:
         #    self.DelB = -self.DelA 
         #else:

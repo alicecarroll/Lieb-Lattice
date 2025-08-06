@@ -5,7 +5,10 @@ class Model:
     def __init__(self, **kwargs):
 
         self.t = kwargs.get('t', 1.0) # Hopping parameter
+
         self.U = kwargs.get('U', 1) #strength of attractive interaction
+        self.UB = kwargs.get('UB', 1) #strength of attractive interaction
+
         self.mu = kwargs.get('mu', 0.0) # Chemical potential
         self.muB = kwargs.get('muB', 0.0)
         self.nA = kwargs.get('nA', 0.0)
@@ -49,8 +52,8 @@ class Model:
         H[np.array([6, 9]), np.array([6, 9])] = lambda kx, ky:  self.mu-self.nA/4*self.U
         H[np.array([8, 11]), np.array([8, 11])] = lambda kx, ky:  self.mu-self.nC/4*self.U
         #special treatment of B site
-        H[np.array([1, 4]), np.array([1, 4])] = lambda kx, ky: -self.muB + self.nB/4*self.U
-        H[np.array([7, 10]), np.array([7, 10])] = lambda kx, ky: self.muB- self.nB/4*self.U
+        H[np.array([1, 4]), np.array([1, 4])] = lambda kx, ky: -self.muB + self.nB/4*self.UB
+        H[np.array([7, 10]), np.array([7, 10])] = lambda kx, ky: self.muB- self.nB/4*self.UB
         
         #h
         H[np.array([0, 1, 3, 4]), np.array([1, 0, 4, 3])] = lambda kx, ky: -2*self.t * np.cos(kx/2) # Some function of kx, ky
@@ -156,62 +159,72 @@ class Model:
                 Delta+=el
                 Nu+=nu_el
         
-        finDel = -self.U/le**2*Delta
+        #finDel = -self.U/le**2*Delta
         finNu = np.diag(Nu)/le**2
         nuA = finNu[0]+finNu[3]
         nuB = finNu[1]+finNu[4]
         nuC = finNu[2]+finNu[5]
-        dan=finDel[3,0]
-        dbn=finDel[4, 1]
-        dcn=finDel[5, 2]
+        dan=-self.U/le**2*Delta[3,0]
+        dbn=-self.UB/le**2*Delta[4, 1]
+        dcn=-self.U/le**2*Delta[5, 2]
 
 
         return [dan, dbn, dcn], [nuA, nuB, nuC]
         
-    def Deltra(self, k, N=20, alpha=0):
+    def Deltra(self, k, Nmax=20, Nmin=10, alpha=0):
         dan, dbn, dcn = (self.Del0A, self.Del0B, self.Del0C)
         delarrn = np.array([dan, dbn, dcn])
-        na, nb, nc = (self.nA, self.nB, self.nC)
         dels = delarrn.reshape(3,1)
+
+        na, nb, nc = (self.nA, self.nB, self.nC)
+        nuarrn = np.array([na, nb, nc])
         ns = np.array([[],[],[]])
         #r = []
+
         r2 = np.array([1, 1, 1, 1, 1])
         c=0
-        while (c<N and (np.abs(r2[-5:])>0.01).all()) or c<10:
+        while (c<Nmax and (np.abs(r2[-5:])>0.001).any()) or c<Nmin:
         #for i in range(N):
             print(c, r2[-1])
+            if c==5 or c==50:
+                print(self.Hk(k[0], k[0]))
             c+=1
-            da, db, dc = (dan, dbn, dcn)
+
             delarro = delarrn
-            nA, nB, nC = (na, nb, nc)
-            nuarrn = np.array([na, nb, nc])
-            nuarro = np.array([nA, nB, nC])
+            nuarro = nuarrn
 
             dels = np.concatenate((dels, delarro.reshape(3,1)), axis=1)
             ns = np.concatenate((ns, nuarro.reshape(3,1)), axis=1)
-            
-            self.Del0A =da
-            self.Del0B = db
-            self.Del0C = dc
-            self.nA = nA
-            self.nB = nB
-            self.nC = nC
 
-            Delta = self.DeltaN(k)[0]
+            Vals = self.DeltaN(k)
+
+            Delta = Vals[0]
             dan=Delta[0]
             dbn=Delta[1]
             dcn=Delta[2]
 
-            Nu = self.DeltaN(k)[1]
-            na=Nu[0]
-            nb=Nu[1]
-            nc=Nu[2]
+            Nu = Vals[1]
+            na=Nu[0]*0
+            nb=Nu[1]*0
+            nc=Nu[2]*0
 
+
+            P=np.array([[1/2, 0, -1/2], [0,0,0], [-1/2, 0, 1/2]])
             delarrn = np.array([dan, dbn, dcn])
+            #delarrn = np.matmul(P, delarrn)
             nuarrn = np.array([na, nb, nc])
+            #nuarrn = np.matmul(P, nuarrn)
 
             delarrn = alpha*delarro+(1-alpha)*delarrn
             nuarrn = alpha*nuarro+(1-alpha)*nuarrn
+
+            self.Del0A =delarrn[0]
+            self.Del0B = delarrn[1]
+            self.Del0C = delarrn[2]
+            self.nA = nuarrn[0]
+            self.nB = nuarrn[1]
+            self.nC = nuarrn[2]
+
             #err = [np.abs(dan-da)/np.abs(dan), np.abs(dbn-db)/np.abs(dbn), np.abs(dcn-dc)/np.abs(dcn)]
             err2 = np.sqrt(np.sum((np.abs(dels[:,-1])-np.abs(dels[:,-2]))**2))/(np.sqrt(np.sum(np.abs(dels[:,-2])**2)+1e-9))
             #r.append(err)
