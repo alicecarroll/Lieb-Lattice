@@ -24,6 +24,7 @@ class Model:
         self.inhomp = kwargs.get('inhomp', False)
         self.inhomi = kwargs.get('inhomi', False)
 
+        self.T = kwargs.get('T', 0.0)
     
         self.Hk = self.HBdG()
 
@@ -65,23 +66,23 @@ class Model:
 
         #Del
         #on site
-        H[np.array([0]), np.array([9])] = lambda kx, ky: self.Del0A
-        H[np.array([9]), np.array([0])] = lambda kx, ky: np.conjugate(self.Del0A)
+        H[np.array([0]), np.array([9])] = lambda kx, ky: -self.Del0A/2
+        H[np.array([9]), np.array([0])] = lambda kx, ky: -np.conjugate(self.Del0A)/2
 
-        H[np.array([3]), np.array([6])] = lambda kx, ky: -self.Del0A
-        H[np.array([6]), np.array([3])] = lambda kx, ky: -np.conjugate(self.Del0A)
+        H[np.array([3]), np.array([6])] = lambda kx, ky: self.Del0A/2
+        H[np.array([6]), np.array([3])] = lambda kx, ky: np.conjugate(self.Del0A)/2
 
-        H[np.array([1]), np.array([10])] = lambda kx, ky: self.Del0B
-        H[np.array([10]), np.array([1])] = lambda kx, ky: np.conjugate(self.Del0B)
+        H[np.array([1]), np.array([10])] = lambda kx, ky: -self.Del0B/2
+        H[np.array([10]), np.array([1])] = lambda kx, ky: -np.conjugate(self.Del0B)/2
 
-        H[np.array([4]), np.array([7])] = lambda kx, ky: -self.Del0B
-        H[np.array([7]), np.array([4])] = lambda kx, ky: -np.conjugate(self.Del0B)
+        H[np.array([4]), np.array([7])] = lambda kx, ky: self.Del0B/2
+        H[np.array([7]), np.array([4])] = lambda kx, ky: np.conjugate(self.Del0B)/2
         
-        H[np.array([2]), np.array([11])] = lambda kx, ky: self.Del0C
-        H[np.array([11]), np.array([2])] = lambda kx, ky: np.conjugate(self.Del0C)
+        H[np.array([2]), np.array([11])] = lambda kx, ky: -self.Del0C/2
+        H[np.array([11]), np.array([2])] = lambda kx, ky: -np.conjugate(self.Del0C)/2
 
-        H[np.array([5]), np.array([8])] = lambda kx, ky: -self.Del0C
-        H[np.array([8]), np.array([5])] = lambda kx, ky: -np.conjugate(self.Del0C)
+        H[np.array([5]), np.array([8])] = lambda kx, ky: self.Del0C/2
+        H[np.array([8]), np.array([5])] = lambda kx, ky: np.conjugate(self.Del0C)/2
       
         
         def Hk(kx, ky): 
@@ -92,7 +93,7 @@ class Model:
             #hk = np.empty_like(H, dtype=float)
             eps = 1e-15
             for index in np.ndindex(H.shape): hk[index] = H[index](kx, ky)
-            hk[np.abs(hk) < eps] = 0
+            #hk[np.abs(hk) < eps] = 0
 
             return hk
         
@@ -124,34 +125,36 @@ class Model:
 
         for x in k:
             for y in k:
-                evals, Evec = np.linalg.eig(self.Hk(x, y))
+                #evals, Evec = np.linalg.eig(self.Hk(x, y))
+                evals, Evec = np.linalg.eigh(self.Hk(x, y))
                 Evec = Evec.T
-                evals[np.abs(evals)<eps]=0
-                Evec[np.abs(Evec)<eps]=0
+                #evals[np.abs(evals)<eps]=0
+                #Evec[np.abs(Evec)<eps]=0
 
                 sortedEVals = np.zeros(12)
                 indexmap = np.zeros(12)
                 degen = []
         
-                d =0
-                inbet = np.unique(evals)[::-1]
-                l=np.shape(inbet)[0]
-                for t in range(l):
-                    for i, j in enumerate(evals):
-                        if j == inbet[t]:
-                            indexmap[sum(degen)+d]=i
-                            d+=1
+                #d =0
+                #inbet = np.unique(evals)[::-1]
+                #l=np.shape(inbet)[0]
+                #for t in range(l):
+                #    for i, j in enumerate(evals):
+                #        if j == inbet[t]:
+                #            indexmap[sum(degen)+d]=i
+                #            d+=1
 
-                    sortedEVals[sum(degen):sum(degen)+d]=inbet[t]
-                    degen.append(d)              
+                #    sortedEVals[sum(degen):sum(degen)+d]=inbet[t]
+                #    degen.append(d)              
 
-                    d=0
+                #    d=0
 
-                Carr = np.zeros((12,12), dtype=object)
-                for i in range(12):
-                    Carr[i]=Evec[int(indexmap[i])]
-                Carr[np.abs(Carr)<1e-15]=0
-        
+                #Carr = np.zeros((12,12), dtype=object)
+                #for i in range(12):
+                #    Carr[i]=Evec[int(indexmap[i])]
+                #Carr[np.abs(Carr)<1e-15]=0
+                Carr= np.flip(Evec, axis=1)
+
                 u=Carr[0:6, 0:6]
                 v=Carr[0:6,6:]   
                 el =np.matmul(np.conjugate(u.T), v)
@@ -164,9 +167,9 @@ class Model:
         nuA = finNu[0]+finNu[3]
         nuB = finNu[1]+finNu[4]
         nuC = finNu[2]+finNu[5]
-        dan=-self.U/le**2*Delta[3,0]
-        dbn=-self.UB/le**2*Delta[4, 1]
-        dcn=-self.U/le**2*Delta[5, 2]
+        dan=-np.abs(self.U)/le**2*Delta[3,0]
+        dbn=-np.abs(self.UB)/le**2*Delta[4, 1]
+        dcn=-np.abs(self.U)/le**2*Delta[5, 2]
 
 
         return [dan, dbn, dcn], [nuA, nuB, nuC]
@@ -183,10 +186,10 @@ class Model:
 
         r2 = np.array([1, 1, 1, 1, 1])
         c=0
-        while (c<Nmax and (np.abs(r2[-5:])>0.001).any()) or c<Nmin:
+        while (c<Nmax and (np.abs(r2[-5:])>0.003).any()) or c<Nmin:
         #for i in range(N):
             print(c, r2[-1])
-            if c==5 or c==50:
+            if c==5 or c%50==0:
                 print(self.Hk(k[0], k[0]))
             c+=1
 
