@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.constants as sc
 
 
 class Model:
@@ -23,8 +24,6 @@ class Model:
         # Inhomogeneous pairing/site?
         self.inhomp = kwargs.get('inhomp', False)
         self.inhomi = kwargs.get('inhomi', False)
-
-        self.T = kwargs.get('T', 0.0)
     
         self.Hk = self.HBdG()
 
@@ -116,24 +115,26 @@ class Model:
             
         return eig.T
     
-    def DeltaN(self, k):
+    def DeltaN(self, k, T):
         le = np.shape(k)[0]
         Delta=np.zeros((6,6), dtype=object)
+
         Nu=np.zeros((6,6), dtype=object)
 
         eps = 1e-15
-
+        c=0
         for x in k:
             for y in k:
+                c+=1
                 #evals, Evec = np.linalg.eig(self.Hk(x, y))
                 evals, Evec = np.linalg.eigh(self.Hk(x, y))
                 Evec = Evec.T
                 #evals[np.abs(evals)<eps]=0
                 #Evec[np.abs(Evec)<eps]=0
 
-                sortedEVals = np.zeros(12)
-                indexmap = np.zeros(12)
-                degen = []
+                #sortedEVals = np.zeros(12)
+                #indexmap = np.zeros(12)
+                #degen = []
         
                 #d =0
                 #inbet = np.unique(evals)[::-1]
@@ -153,15 +154,49 @@ class Model:
                 #for i in range(12):
                 #    Carr[i]=Evec[int(indexmap[i])]
                 #Carr[np.abs(Carr)<1e-15]=0
-                Carr= np.flip(Evec, axis=1)
+                evals[np.abs(evals)<eps]=0
 
+                Evals2 = np.diag(evals[0:6])
+                evals = np.flip(evals)
+                Evals1 = np.diag(evals[0:6])
+                
+                Carr= np.flip(Evec, axis=1)
+                Carr2 = Evec
                 u=Carr[0:6, 0:6]
-                v=Carr[0:6,6:]   
-                el =np.matmul(np.conjugate(u.T), v)
+                v=Carr[0:6,6:]
+                u2=Carr2[0:6, 0:6]
+                v2=Carr2[0:6,6:]
+
+                el=np.zeros((6,6), dtype=object)
+                if T<1e-20:
+                    el=np.matmul(np.conjugate(u2.T),v2)
+                else:
+                    #for i in range(6):     
+                    #    el +=np.matmul(np.conjugate(u.T)[:,i],1/(1+np.exp(Evals2[i,i]/(sc.k*self.T)))* v[i,:])+np.matmul(v.T[:,i],1/(1+np.exp(Evals1[i,i]/(sc.k*self.T)))* np.conjugate(u)[i,:])
+                    el=np.matmul(np.conjugate(u.T),np.matmul(1/(1+np.exp(Evals2*sc.e/(sc.k*T))), v))+np.matmul(v.T,np.matmul(1/(1+np.exp(Evals1*sc.e/(sc.k*T))),np.conjugate(u)))
+                    #el +=np.matmul(np.conjugate(u)[:,i],np.exp(-Evals2[i,i]/(sc.k*self.T))/(1+np.exp(-Evals2[i,i]/(sc.k*self.T)))* v[i,:])+np.matmul(v[:,i],(np.exp(-Evals2[i,i]/(sc.k*self.T))/(1+np.exp(-Evals2[i,i]/(sc.k*self.T))))* np.conjugate(u)[i,:])
+                    #print(np.conjugate(u2.T))
+                    #print('evals1:', Evals1)
+                    #print('evals2:', Evals2)
+                    #print(1/(1+np.exp(Evals2*sc.e/(sc.k*T*1e2))))
+                    #print(v2)
+                    #print(np.exp(-Evals2[i,i]/(sc.k*self.T))/(1+np.exp(-Evals2[i,i]/(sc.k*self.T))))
+
+                    #print( v[i,:])
+                #if c%200==0:
+                #    print(el)
+                
+                if np.isnan(el.any()):
+                    print(x, y, ': \n', el)
+                    print('u\n', u)
+                    print('evals\n', evals)
+                    print(np.exp(-Evals1/(sc.k*self.T))/(1+np.exp(-Evals1/(sc.k*self.T))))
+                    print(np.exp(-Evals2/(sc.k*self.T))/(1+np.exp(-Evals2/(sc.k*self.T))))
                 nu_el = np.matmul(np.conjugate(v.T), v)
                 Delta+=el
                 Nu+=nu_el
         
+        #print(Delta)
         #finDel = -self.U/le**2*Delta
         finNu = np.diag(Nu)/le**2
         nuA = finNu[0]+finNu[3]
@@ -170,11 +205,11 @@ class Model:
         dan=-np.abs(self.U)/le**2*Delta[3,0]
         dbn=-np.abs(self.UB)/le**2*Delta[4, 1]
         dcn=-np.abs(self.U)/le**2*Delta[5, 2]
-
+        #print(dan)
 
         return [dan, dbn, dcn], [nuA, nuB, nuC]
         
-    def Deltra(self, k, Nmax=20, Nmin=10, alpha=0):
+    def Deltra(self, k, T=0, Nmax=20, Nmin=10, alpha=0):
         dan, dbn, dcn = (self.Del0A, self.Del0B, self.Del0C)
         delarrn = np.array([dan, dbn, dcn])
         dels = delarrn.reshape(3,1)
@@ -199,7 +234,7 @@ class Model:
             dels = np.concatenate((dels, delarro.reshape(3,1)), axis=1)
             ns = np.concatenate((ns, nuarro.reshape(3,1)), axis=1)
 
-            Vals = self.DeltaN(k)
+            Vals = self.DeltaN(k, T)
 
             Delta = Vals[0]
             dan=Delta[0]
