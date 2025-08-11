@@ -131,9 +131,9 @@ class Model:
                 #evals[np.abs(evals)<eps]=0
                 #Evec[np.abs(Evec)<eps]=0
 
-                sortedEVals = np.zeros(12)
-                indexmap = np.zeros(12)
-                degen = []
+                #sortedEVals = np.zeros(12)
+                #indexmap = np.zeros(12)
+                #degen = []
         
                 #d =0
                 #inbet = np.unique(evals)[::-1]
@@ -207,9 +207,9 @@ class Model:
             dcn=Delta[2]
 
             Nu = Vals[1]
-            na=Nu[0]*0
-            nb=Nu[1]*0
-            nc=Nu[2]*0
+            na=Nu[0]
+            nb=Nu[1]
+            nc=Nu[2]
 
 
             P=np.array([[1/2, 0, -1/2], [0,0,0], [-1/2, 0, 1/2]])
