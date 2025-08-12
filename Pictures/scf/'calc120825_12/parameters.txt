@@ -1,0 +1,9 @@
+mM = AHM.Model(Del0A, Del0B, Del0C= [7 0 7], nA, nB, nC=[0. 0. 0.], U=14, UB=0, mu=0, muB=0, t=1, inhomp=True, inhomi=True)
+ alpha=0.7
+ Temperature=0
+ dels: [[7 7]
+ [0 0]
+ [7 7]]
+nus: [[0.]
+ [0.]
+ [0.]]
