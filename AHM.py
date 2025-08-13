@@ -47,20 +47,20 @@ class Model:
 
 
         #diagonals
-        H[np.array([0, 3]), np.array([0, 3])] = lambda kx, ky: -(-self.mu-self.nA/4*np.abs(self.U))
-        H[np.array([2, 5]), np.array([2, 5])] = lambda kx, ky: -(-self.mu-self.nC/4*np.abs(self.U))
-        H[np.array([6, 9]), np.array([6, 9])] = lambda kx, ky:  -np.conjugate(self.mu+self.nA/4*np.abs(self.U))
-        H[np.array([8, 11]), np.array([8, 11])] = lambda kx, ky:  -np.conjugate(self.mu+self.nC/4*np.abs(self.U))
+        H[np.array([0, 3]), np.array([0, 3])] = lambda kx, ky: -self.mu/2+self.nA/2*np.abs(self.U/2)
+        H[np.array([2, 5]), np.array([2, 5])] = lambda kx, ky: -self.mu/2+self.nC/2*np.abs(self.U/2)
+        H[np.array([6, 9]), np.array([6, 9])] = lambda kx, ky:  np.conjugate(self.mu/2-self.nA/2*np.abs(self.U/2))
+        H[np.array([8, 11]), np.array([8, 11])] = lambda kx, ky:  np.conjugate(self.mu/2-self.nC/2*np.abs(self.U/2))
         #special treatment of B site
-        H[np.array([1, 4]), np.array([1, 4])] = lambda kx, ky: -(-self.muB - self.nB/4*np.abs(self.UB))
-        H[np.array([7, 10]), np.array([7, 10])] = lambda kx, ky: -np.conjugate(self.muB+ self.nB/4*np.abs(self.UB))
+        H[np.array([1, 4]), np.array([1, 4])] = lambda kx, ky: -self.muB/2 + self.nB/2*np.abs(self.UB/2)
+        H[np.array([7, 10]), np.array([7, 10])] = lambda kx, ky: np.conjugate(self.muB/2- self.nB/2*np.abs(self.UB/2))
         
         #h
-        H[np.array([0, 1, 3, 4]), np.array([1, 0, 4, 3])] = lambda kx, ky: 2*self.t * np.cos(kx/2) # Some function of kx, ky
-        H[np.array([1, 2, 4, 5]), np.array([2, 1, 5, 4])] = lambda kx, ky: 2*self.t * np.cos(ky/2) 
+        H[np.array([0, 1, 3, 4]), np.array([1, 0, 4, 3])] = lambda kx, ky: self.t * np.cos(kx/2) # Some function of kx, ky
+        H[np.array([1, 2, 4, 5]), np.array([2, 1, 5, 4])] = lambda kx, ky: self.t * np.cos(ky/2) 
         #h*
-        H[np.array([6, 7, 9, 10]), np.array([7, 6, 10, 9])] = lambda kx, ky: -np.conjugate(2*self.t * np.cos(kx/2)) # Some function of kx, ky
-        H[np.array([7, 8, 10, 11]), np.array([8, 7, 11, 10])] = lambda kx, ky: -np.conjugate(2*self.t * np.cos(ky/2))
+        H[np.array([6, 7, 9, 10]), np.array([7, 6, 10, 9])] = lambda kx, ky: -np.conjugate(self.t * np.cos(kx/2)) # Some function of kx, ky
+        H[np.array([7, 8, 10, 11]), np.array([8, 7, 11, 10])] = lambda kx, ky: -np.conjugate(self.t * np.cos(ky/2))
         
 
         #Del
@@ -90,7 +90,7 @@ class Model:
             hk = np.empty_like(H, dtype=complex)
             eps = 1e-15
             for index in np.ndindex(H.shape): hk[index] = H[index](kx, ky)
-            hk[np.abs(hk) < eps] = 0
+            #hk[np.abs(hk) < eps] = 0
 
             return hk
         
@@ -108,19 +108,20 @@ class Model:
         for i in range(n):
             e = np.linalg.eigvalsh(self.Hk(kx[i], ky[i])) #
 
-            e[np.abs(e)<eps]=0
+            #e[np.abs(e)<eps]=0
             eig[i]=np.sort(e)
             
         return eig.T
     
-    def DeltaN(self, k, T):
+    def DeltaN(self, k, T, HF):
         le = np.shape(k)[0]
         Delta=np.zeros((6,6), dtype=object)
 
         Nu=np.zeros((6,6), dtype=object)
         
-        Eh=sc.e*1e-3
-
+        Eh=1#sc.e*1e-3
+        kb = sc.k
+        kb=1
         eps = 1e-15
         c=0
         for x in k:
@@ -130,10 +131,10 @@ class Model:
                 evals, Evec = np.linalg.eigh(self.Hk(x, y))
                 Evec = Evec.T
                 
-                evals[np.abs(evals)<eps]=0
+                #evals[np.abs(evals)<eps]=0
 
-                evals = np.flip(evals)
-                Evals = np.diag(evals[0:6])
+                evals = np.flip(evals)[0:6]
+                #Evals = np.diag(evals[0:6])
                 
                 Carr= np.flip(Evec, axis=1)
                 u=Carr[0:6, 0:6]
@@ -142,20 +143,25 @@ class Model:
                 el=np.zeros((6,6), dtype=object)
                 if T<1e-20:
                     el=np.matmul(np.conjugate(u.T),v)
-                    nu_el = np.matmul(np.conjugate(v.T), v)
+                    if HF:
+                        nu_el = np.matmul(np.conjugate(v.T), v)
+                        Nu+=nu_el
 
                 else:
-                    el=np.matmul(np.conjugate(u.T),np.matmul(1/(1+np.exp(-Evals/(sc.k*T/Eh))), v))+np.matmul(v.T,np.matmul(1/(1+np.exp(Evals/(sc.k*T/Eh))),np.conjugate(u)))
-                    nu_el = np.matmul(np.conjugate(v.T),np.matmul(1/(1+np.exp(-Evals/(sc.k*T/Eh))), v))+np.matmul(u.T,np.matmul(1/(1+np.exp(Evals/(sc.k*T/Eh))), np.conjugate(u)))
-                
+                    #el=np.matmul(np.conjugate(u.T),np.matmul(1/(1+np.exp(-Evals/(kb*T/Eh))), v))+np.matmul(v.T,np.matmul(1/(1+np.exp(Evals/(kb*T/Eh))),np.conjugate(u)))
+                    el=np.matmul(np.conjugate(u.T),np.matmul(np.diag(1/(1+np.exp(-evals/(kb*T/Eh)))), v))+np.matmul(v.T,np.matmul(np.diag(1/(1+np.exp(evals/(kb*T/Eh)))),np.conjugate(u)))
+                    if HF:
+                        nu_el = 0#np.matmul(np.conjugate(v.T),np.matmul(1/(1+np.exp(-Evals/(kb*T/Eh))), v))+np.matmul(u.T,np.matmul(1/(1+np.exp(Evals/(kb*T/Eh))), np.conjugate(u)))
+                        Nu+=nu_el
                 if np.isnan(el.any()):
                     print(x, y, ': \n', el)
                     print('u\n', u)
                     print('evals\n', evals)
-                    print(np.exp(-Evals/(sc.k*self.T))/(1+np.exp(-Evals/(sc.k*self.T))))
-                    print(np.exp(-Evals/(sc.k*self.T))/(1+np.exp(-Evals/(sc.k*self.T))))
+                #if c%200==0:
+                    #print(np.diag(1/(1+np.exp(-evals/(kb*T/Eh)))))
+
                 Delta+=el
-                Nu+=nu_el
+                
         
         finNu = np.diag(Nu)/le**2
         nuA = finNu[0]+finNu[3]
@@ -167,7 +173,7 @@ class Model:
 
         return [dan, dbn, dcn], [nuA, nuB, nuC]
         
-    def Deltra(self, k, T=0, HF=False, Nmax=20, Nmin=10, alpha=0):
+    def Deltra(self, k, T=0, g=0.01, HF=False, Nmax=20, Nmin=10, alpha=0):
         dan, dbn, dcn = (self.Del0A, self.Del0B, self.Del0C)
         delarrn = np.array([dan, dbn, dcn])
         dels = delarrn.reshape(3,1)
@@ -179,9 +185,11 @@ class Model:
 
         r2 = np.array([1, 1, 1, 1, 1])
         c=0
-        while (c<Nmax and (np.abs(r2[-5:])>0.003).any()) or c<Nmin:
+        while (c<Nmax and (np.std(np.abs(dels[:,-5:]), axis=1)>g).any()) or c<Nmin:
+            #(np.abs(r2[-5:])>0.003).any()
         #for i in range(N):
             #print(c, r2[-1])
+
             #if c==5 or c%50==0:
             #    print(self.Hk(k[0], k[0]))
             c+=1
@@ -192,22 +200,21 @@ class Model:
             dels = np.concatenate((dels, delarro.reshape(3,1)), axis=1)
             ns = np.concatenate((ns, nuarro.reshape(3,1)), axis=1)
 
-            Vals = self.DeltaN(k, T)
+            Vals = self.DeltaN(k, T, HF)
 
             Delta = Vals[0]
             dan=Delta[0]
             dbn=Delta[1]
             dcn=Delta[2]
 
-            Nu = Vals[1]
             if HF:
+                Nu = Vals[1]
                 na=Nu[0]
                 nb=Nu[1]
                 nc=Nu[2]
-            else:
-                na=Nu[0]*0
-                nb=Nu[1]*0
-                nc=Nu[2]*0
+                self.nA = nuarrn[0]
+                self.nB = nuarrn[1]
+                self.nC = nuarrn[2]
 
 
             P=np.array([[1/2, 0, -1/2], [0,0,0], [-1/2, 0, 1/2]])
@@ -222,21 +229,19 @@ class Model:
             self.Del0A =delarrn[0]
             self.Del0B = delarrn[1]
             self.Del0C = delarrn[2]
-            self.nA = nuarrn[0]
-            self.nB = nuarrn[1]
-            self.nC = nuarrn[2]
+            
 
             #err = [np.abs(dan-da)/np.abs(dan), np.abs(dbn-db)/np.abs(dbn), np.abs(dcn-dc)/np.abs(dcn)]
-            err2 = np.sqrt(np.sum((np.abs(dels[:,-1])-np.abs(dels[:,-2]))**2))/(np.sqrt(np.sum(np.abs(dels[:,-2])**2)+1e-9))
+            err2 = 1#np.sqrt(np.sum((np.abs(dels[:,-1])-np.abs(dels[:,-2]))**2))/(np.sqrt(np.sum(np.abs(dels[:,-2])**2)+1e-9))
             #r.append(err)
             r2=np.concatenate((r2,np.array([err2])), axis=0)
             
-        if (np.abs(r2[-5:])>0.003).any():
-            avdel = np.average(dels[:,-10:], axis=1)    
-            dels = np.concatenate((dels, avdel.reshape(3,1)), axis=1)
-            self.Del0A =avdel[0]
-            self.Del0B = avdel[1]
-            self.Del0C = avdel[2]
+        #if (np.abs(r2[-5:])>0.003).any():
+        avdel = np.average(dels[:,-10:], axis=1)    
+        dels = np.concatenate((dels, avdel.reshape(3,1)), axis=1)
+        self.Del0A =avdel[0]
+        self.Del0B = avdel[1]
+        self.Del0C = avdel[2]
         #r=np.array(r)
         
         return dels, r2, ns
