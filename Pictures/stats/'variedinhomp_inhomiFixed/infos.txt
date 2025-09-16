@@ -1,7 +1,7 @@
-x-axis: $\mu_B$; y-axis: $\mu_{A/C}$
-Del0=(0.0, 0, 0)...(3.0, 0, 0)
+x-axis: $\Delta_d$; y-axis: $\mu_{A/C}$
+Del0=(0.0, 0, 0)...(5.0, 0, 0)
 Del0A=0.2
-Del0B=0
+Del0B=0.0
 Del0C=-0.2
 Deld=0
 Dels=0

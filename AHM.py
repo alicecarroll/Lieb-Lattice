@@ -207,30 +207,32 @@ class Model:
             dbn=Delta[1]
             dcn=Delta[2]
 
+            delarrn = np.array([dan, dbn, dcn])
+            delarrn = alpha*delarro+(1-alpha)*delarrn
+
+            self.Del0A =delarrn[0]
+            self.Del0B = delarrn[1]
+            self.Del0C = delarrn[2]
+
             if HF:
                 Nu = Vals[1]
                 na=Nu[0]
                 nb=Nu[1]
                 nc=Nu[2]
+                
+                nuarrn = np.array([na, nb, nc])
+                nuarrn = alpha*nuarro+(1-alpha)*nuarrn
+
                 self.nA = nuarrn[0]
                 self.nB = nuarrn[1]
                 self.nC = nuarrn[2]
 
 
-            P=np.array([[1/2, 0, -1/2], [0,0,0], [-1/2, 0, 1/2]])
-            delarrn = np.array([dan, dbn, dcn])
+            #P=np.array([[1/2, 0, -1/2], [0,0,0], [-1/2, 0, 1/2]])
             #delarrn = np.matmul(P, delarrn)
-            nuarrn = np.array([na, nb, nc])
-            #nuarrn = np.matmul(P, nuarrn)
-
-            delarrn = alpha*delarro+(1-alpha)*delarrn
-            nuarrn = alpha*nuarro+(1-alpha)*nuarrn
-
-            self.Del0A =delarrn[0]
-            self.Del0B = delarrn[1]
-            self.Del0C = delarrn[2]
             
-
+            #nuarrn = np.matmul(P, nuarrn)
+            
             #err = [np.abs(dan-da)/np.abs(dan), np.abs(dbn-db)/np.abs(dbn), np.abs(dcn-dc)/np.abs(dcn)]
             err2 = 1#np.sqrt(np.sum((np.abs(dels[:,-1])-np.abs(dels[:,-2]))**2))/(np.sqrt(np.sum(np.abs(dels[:,-2])**2)+1e-9))
             #r.append(err)
