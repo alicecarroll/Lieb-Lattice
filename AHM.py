@@ -47,13 +47,13 @@ class Model:
 
 
         #diagonals
-        H[np.array([0, 3]), np.array([0, 3])] = lambda kx, ky: self.mu+self.nA*np.abs(self.U/2)
-        H[np.array([2, 5]), np.array([2, 5])] = lambda kx, ky: self.mu+self.nC*np.abs(self.U/2)
-        H[np.array([6, 9]), np.array([6, 9])] = lambda kx, ky:  np.conjugate(-self.mu-self.nA*np.abs(self.U/2))
-        H[np.array([8, 11]), np.array([8, 11])] = lambda kx, ky:  np.conjugate(-self.mu-self.nC*np.abs(self.U/2))
+        H[np.array([0, 3]), np.array([0, 3])] = lambda kx, ky: -self.mu-self.nA*np.abs(self.U/2)
+        H[np.array([2, 5]), np.array([2, 5])] = lambda kx, ky: -self.mu-self.nC*np.abs(self.U/2)
+        H[np.array([6, 9]), np.array([6, 9])] = lambda kx, ky:  np.conjugate(self.mu+self.nA*np.abs(self.U/2))
+        H[np.array([8, 11]), np.array([8, 11])] = lambda kx, ky:  np.conjugate(self.mu+self.nC*np.abs(self.U/2))
         #special treatment of B site
-        H[np.array([1, 4]), np.array([1, 4])] = lambda kx, ky: self.muB + self.nB*np.abs(self.UB/2)
-        H[np.array([7, 10]), np.array([7, 10])] = lambda kx, ky: np.conjugate(-self.muB-self.nB*np.abs(self.UB/2))
+        H[np.array([1, 4]), np.array([1, 4])] = lambda kx, ky: -self.muB - self.nB*np.abs(self.UB/2)
+        H[np.array([7, 10]), np.array([7, 10])] = lambda kx, ky: np.conjugate(self.muB+self.nB*np.abs(self.UB/2))
         
         #h
         H[np.array([0, 1, 3, 4]), np.array([1, 0, 4, 3])] = lambda kx, ky: -2*self.t * np.cos(kx/2) # Some function of kx, ky
@@ -65,23 +65,23 @@ class Model:
 
         #Del
         #on site
-        H[np.array([0]), np.array([9])] = lambda kx, ky: -self.Del0A
-        H[np.array([9]), np.array([0])] = lambda kx, ky: -np.conjugate(self.Del0A)
+        H[np.array([0]), np.array([9])] = lambda kx, ky:  self.Del0A
+        H[np.array([9]), np.array([0])] = lambda kx, ky:  np.conjugate(self.Del0A)
 
-        H[np.array([3]), np.array([6])] = lambda kx, ky: self.Del0A
-        H[np.array([6]), np.array([3])] = lambda kx, ky: np.conjugate(self.Del0A)
+        H[np.array([3]), np.array([6])] = lambda kx, ky:  -self.Del0A
+        H[np.array([6]), np.array([3])] = lambda kx, ky:  -np.conjugate(self.Del0A)
 
-        H[np.array([1]), np.array([10])] = lambda kx, ky:-self.Del0B
-        H[np.array([10]), np.array([1])] = lambda kx, ky:-np.conjugate(self.Del0B)
+        H[np.array([1]), np.array([10])] = lambda kx, ky: self.Del0B
+        H[np.array([10]), np.array([1])] = lambda kx, ky: np.conjugate(self.Del0B)
 
-        H[np.array([4]), np.array([7])] = lambda kx, ky: self.Del0B
-        H[np.array([7]), np.array([4])] = lambda kx, ky: np.conjugate(self.Del0B)
+        H[np.array([4]), np.array([7])] = lambda kx, ky:  -self.Del0B
+        H[np.array([7]), np.array([4])] = lambda kx, ky:  -np.conjugate(self.Del0B)
         
-        H[np.array([2]), np.array([11])] = lambda kx, ky:-self.Del0C
-        H[np.array([11]), np.array([2])] = lambda kx, ky:-np.conjugate(self.Del0C)
+        H[np.array([2]), np.array([11])] = lambda kx, ky: self.Del0C
+        H[np.array([11]), np.array([2])] = lambda kx, ky: np.conjugate(self.Del0C)
 
-        H[np.array([5]), np.array([8])] = lambda kx, ky: self.Del0C
-        H[np.array([8]), np.array([5])] = lambda kx, ky: np.conjugate(self.Del0C)
+        H[np.array([5]), np.array([8])] = lambda kx, ky:  -self.Del0C
+        H[np.array([8]), np.array([5])] = lambda kx, ky:  -np.conjugate(self.Del0C)
       
         
         def Hk(kx, ky): 
@@ -137,8 +137,10 @@ class Model:
                 #Evals = np.diag(evals[0:6])
                 
                 Carr= np.flip(Evec, axis=1)
-                u=Carr[0:6, 0:6]
-                v=Carr[0:6,6:]
+                uk = Carr[0:6, 0:6]
+                vk = Carr[0:6,6:]
+                v=np.conjugate(Evec[6:, 0:6])#Carr[0:6, 0:6]
+                u=np.conjugate(Evec[6:, 6:])#Carr[0:6,6:]
                 
                 el=np.zeros((6,6), dtype=object)
                 
@@ -151,10 +153,10 @@ class Model:
 
                 else:
                     #el=np.matmul(np.conjugate(u.T),np.matmul(1/(1+np.exp(-Evals/(kb*T/Eh))), v))+np.matmul(v.T,np.matmul(1/(1+np.exp(Evals/(kb*T/Eh))),np.conjugate(u)))
-                    el=np.matmul(np.conjugate(u.T),np.matmul(np.diag(1/(1+np.exp(-evals/(kb*T/Eh)))), v))+np.matmul(v.T,np.matmul(np.diag(1/(1+np.exp(evals/(kb*T/Eh)))),np.conjugate(u)))
+                    el=np.matmul(np.conjugate(u.T),np.matmul(np.diag(1/(1+np.exp(-evals/(kb*T/Eh)))), v))+np.matmul(vk.T,np.matmul(np.diag(1/(1+np.exp(evals/(kb*T/Eh)))),np.conjugate(uk)))
                     Delta+=el
                     if HF:
-                        nu_el = 0#np.matmul(np.conjugate(v.T),np.matmul(1/(1+np.exp(-Evals/(kb*T/Eh))), v))+np.matmul(u.T,np.matmul(1/(1+np.exp(Evals/(kb*T/Eh))), np.conjugate(u)))
+                        nu_el = np.matmul(np.conjugate(v.T),np.matmul(1/(1+np.exp(-evals/(kb*T/Eh))), v))+np.matmul(uk.T,np.matmul(1/(1+np.exp(evals/(kb*T/Eh))), np.conjugate(uk)))
                         Nu+=nu_el
                 if np.isnan(el.any()):
                     print(x, y, ': \n', el)
@@ -170,9 +172,9 @@ class Model:
         nuA = finNu[0]+finNu[3]
         nuB = finNu[1]+finNu[4]
         nuC = finNu[2]+finNu[5]
-        dan=-np.abs(self.U)/le**2*Delta[3,0]
-        dbn=-np.abs(self.UB)/le**2*Delta[4, 1]
-        dcn=-np.abs(self.U)/le**2*Delta[5, 2]
+        dan=-np.abs(self.U)/le**2*Delta[0,3]
+        dbn=-np.abs(self.UB)/le**2*Delta[1,4]
+        dcn=-np.abs(self.U)/le**2*Delta[2,5]
         #print(Delta)
         return [dan, dbn, dcn], [nuA, nuB, nuC]
         
