@@ -48,41 +48,41 @@ class Model:
 
 
         #diagonals
-        H[np.array([0, 3]), np.array([0, 3])] = lambda kx, ky: -self.mu+self.nA/4*self.U
-        H[np.array([2, 5]), np.array([2, 5])] = lambda kx, ky: -self.mu+self.nC/4*self.U
-        H[np.array([6, 9]), np.array([6, 9])] = lambda kx, ky:  self.mu-self.nA/4*self.U
-        H[np.array([8, 11]), np.array([8, 11])] = lambda kx, ky:  self.mu-self.nC/4*self.U
+        H[np.array([0, 3]), np.array([0, 3])] = lambda kx, ky: -self.mu-self.nA/2*self.U
+        H[np.array([2, 5]), np.array([2, 5])] = lambda kx, ky: -self.mu-self.nC/2*self.U
+        H[np.array([6, 9]), np.array([6, 9])] = lambda kx, ky:  self.mu+self.nA/2*self.U
+        H[np.array([8, 11]), np.array([8, 11])] = lambda kx, ky:  self.mu+self.nC/2*self.U
         #special treatment of B site
-        H[np.array([1, 4]), np.array([1, 4])] = lambda kx, ky: -self.muB + self.nB/4*self.UB
-        H[np.array([7, 10]), np.array([7, 10])] = lambda kx, ky: self.muB- self.nB/4*self.UB
+        H[np.array([1, 4]), np.array([1, 4])] = lambda kx, ky: -self.muB - self.nB/2*self.UB
+        H[np.array([7, 10]), np.array([7, 10])] = lambda kx, ky: self.muB+ self.nB/2*self.UB
         
         #h
-        H[np.array([0, 1, 3, 4]), np.array([1, 0, 4, 3])] = lambda kx, ky: -2*self.t * np.cos(kx/2) # Some function of kx, ky
-        H[np.array([1, 2, 4, 5]), np.array([2, 1, 5, 4])] = lambda kx, ky: -2*self.t * np.cos(ky/2) 
+        H[np.array([0, 1, 3, 4]), np.array([1, 0, 4, 3])] = lambda kx, ky: 2*self.t * np.cos(kx/2) # Some function of kx, ky
+        H[np.array([1, 2, 4, 5]), np.array([2, 1, 5, 4])] = lambda kx, ky: 2*self.t * np.cos(ky/2) 
         #h*
-        H[np.array([6, 7, 9, 10]), np.array([7, 6, 10, 9])] = lambda kx, ky: 2*self.t * np.cos(kx/2) # Some function of kx, ky
-        H[np.array([7, 8, 10, 11]), np.array([8, 7, 11, 10])] = lambda kx, ky: 2*self.t * np.cos(ky/2)
+        H[np.array([6, 7, 9, 10]), np.array([7, 6, 10, 9])] = lambda kx, ky: -2*self.t * np.cos(kx/2) # Some function of kx, ky
+        H[np.array([7, 8, 10, 11]), np.array([8, 7, 11, 10])] = lambda kx, ky: -2*self.t * np.cos(ky/2)
         
 
         #Del
         #on site
-        H[np.array([0]), np.array([9])] = lambda kx, ky: -self.Del0A/2
-        H[np.array([9]), np.array([0])] = lambda kx, ky: -np.conjugate(self.Del0A)/2
+        H[np.array([0]), np.array([9])] = lambda kx, ky: -self.Del0A
+        H[np.array([9]), np.array([0])] = lambda kx, ky: -np.conjugate(self.Del0A)
 
-        H[np.array([3]), np.array([6])] = lambda kx, ky: self.Del0A/2
-        H[np.array([6]), np.array([3])] = lambda kx, ky: np.conjugate(self.Del0A)/2
+        H[np.array([3]), np.array([6])] = lambda kx, ky: self.Del0A
+        H[np.array([6]), np.array([3])] = lambda kx, ky: np.conjugate(self.Del0A)
 
-        H[np.array([1]), np.array([10])] = lambda kx, ky: -self.Del0B/2
-        H[np.array([10]), np.array([1])] = lambda kx, ky: -np.conjugate(self.Del0B)/2
+        H[np.array([1]), np.array([10])] = lambda kx, ky: -self.Del0B
+        H[np.array([10]), np.array([1])] = lambda kx, ky: -np.conjugate(self.Del0B)
 
-        H[np.array([4]), np.array([7])] = lambda kx, ky: self.Del0B/2
-        H[np.array([7]), np.array([4])] = lambda kx, ky: np.conjugate(self.Del0B)/2
+        H[np.array([4]), np.array([7])] = lambda kx, ky: self.Del0B
+        H[np.array([7]), np.array([4])] = lambda kx, ky: np.conjugate(self.Del0B)
         
-        H[np.array([2]), np.array([11])] = lambda kx, ky: -self.Del0C/2
-        H[np.array([11]), np.array([2])] = lambda kx, ky: -np.conjugate(self.Del0C)/2
+        H[np.array([2]), np.array([11])] = lambda kx, ky: -self.Del0C
+        H[np.array([11]), np.array([2])] = lambda kx, ky: -np.conjugate(self.Del0C)
 
-        H[np.array([5]), np.array([8])] = lambda kx, ky: self.Del0C/2
-        H[np.array([8]), np.array([5])] = lambda kx, ky: np.conjugate(self.Del0C)/2
+        H[np.array([5]), np.array([8])] = lambda kx, ky: self.Del0C
+        H[np.array([8]), np.array([5])] = lambda kx, ky: np.conjugate(self.Del0C)
       
         
         def Hk(kx, ky): 
@@ -207,9 +207,9 @@ class Model:
             dcn=Delta[2]
 
             Nu = Vals[1]
-            na=Nu[0]
-            nb=Nu[1]
-            nc=Nu[2]
+            na=Nu[0]*0
+            nb=Nu[1]*0
+            nc=Nu[2]*0
 
 
             P=np.array([[1/2, 0, -1/2], [0,0,0], [-1/2, 0, 1/2]])
@@ -224,6 +224,7 @@ class Model:
             self.Del0A =delarrn[0]
             self.Del0B = delarrn[1]
             self.Del0C = delarrn[2]
+
             self.nA = nuarrn[0]
             self.nB = nuarrn[1]
             self.nC = nuarrn[2]
@@ -285,12 +286,12 @@ class Model:
             minimal energy gap between each neighbouring band (in order from lowest to highest band)
             average energy gap between each neighbouring band (in order from lowest to highest band)
         '''
-        k = np.linspace(0, 2*np.pi, 100)
+        k = np.linspace(0, np.pi, 100)
 
         k1 = np.ones(100)
         k0 = np.zeros(100)
 
-        kx = np.concatenate((k,np.pi*2*k1, k[::-1]))
+        kx = np.concatenate((k,np.pi*k1, k[::-1]))
         ky = np.concatenate((k0, k, k[::-1]))
 
         E = self.solvHam(kx, ky)
