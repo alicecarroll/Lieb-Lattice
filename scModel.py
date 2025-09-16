@@ -77,23 +77,23 @@ class Model:
         H[np.array([1, 4]), np.array([1, 4])] = lambda kx, ky: -self.muB/2
         H[np.array([7, 10]), np.array([7, 10])] = lambda kx, ky: self.muB/2
 
-        H[np.array([0]), np.array([9])] = lambda kx, ky: -self.Del0A/2
-        H[np.array([9]), np.array([0])] = lambda kx, ky: -np.conjugate(self.Del0A)/2
+        H[np.array([0]), np.array([9])] = lambda kx, ky: self.Del0A/2
+        H[np.array([9]), np.array([0])] = lambda kx, ky: np.conjugate(self.Del0A)/2
 
-        H[np.array([3]), np.array([6])] = lambda kx, ky: self.Del0A/2
-        H[np.array([6]), np.array([3])] = lambda kx, ky: np.conjugate(self.Del0A)/2
+        H[np.array([3]), np.array([6])] = lambda kx, ky:- self.Del0A/2
+        H[np.array([6]), np.array([3])] = lambda kx, ky:- np.conjugate(self.Del0A)/2
 
-        H[np.array([1]), np.array([10])] = lambda kx, ky: -self.Del0B/2
-        H[np.array([10]), np.array([1])] = lambda kx, ky: -np.conjugate(self.Del0B)/2
+        H[np.array([1]), np.array([10])] = lambda kx, ky: self.Del0B/2
+        H[np.array([10]), np.array([1])] = lambda kx, ky: np.conjugate(self.Del0B)/2
 
-        H[np.array([4]), np.array([7])] = lambda kx, ky: self.Del0B/2
-        H[np.array([7]), np.array([4])] = lambda kx, ky: np.conjugate(self.Del0B)/2
+        H[np.array([4]), np.array([7])] = lambda kx, ky: -self.Del0B/2
+        H[np.array([7]), np.array([4])] = lambda kx, ky: -np.conjugate(self.Del0B)/2
         
-        H[np.array([2]), np.array([11])] = lambda kx, ky: -self.Del0C/2
-        H[np.array([11]), np.array([2])] = lambda kx, ky: -np.conjugate(self.Del0C)/2
+        H[np.array([2]), np.array([11])] = lambda kx, ky: self.Del0C/2
+        H[np.array([11]), np.array([2])] = lambda kx, ky: np.conjugate(self.Del0C)/2
 
-        H[np.array([5]), np.array([8])] = lambda kx, ky: self.Del0C/2
-        H[np.array([8]), np.array([5])] = lambda kx, ky: np.conjugate(self.Del0C)/2
+        H[np.array([5]), np.array([8])] = lambda kx, ky: -self.Del0C/2
+        H[np.array([8]), np.array([5])] = lambda kx, ky: -np.conjugate(self.Del0C)/2
 
         #H[np.array([1, 10]), np.array([10, 1])] = lambda kx, ky: self.Del0B
         #H[np.array([4, 7]), np.array([7, 4])] = lambda kx, ky: -self.Del0B
